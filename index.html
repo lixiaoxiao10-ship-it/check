@@ -280,6 +280,9 @@ nav{flex-shrink:0;background:var(--card);border-top:1px solid var(--border);disp
     <button class="bss" onclick="saveSummary()">💾 保存总结（解锁精灵球投掷）</button>
   </div>
   <div style="height:8px"></div>
+  <div style="text-align:center;margin-bottom:16px">
+    <button onclick="showReset()" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;font-family:'Nunito',sans-serif">🔄 重置今日打卡</button>
+  </div>
 </div>
 
 <!-- PARTNER -->
@@ -434,6 +437,22 @@ nav{flex-shrink:0;background:var(--card);border-top:1px solid var(--border);disp
     <p>选择挑战难度，完成后额外奖励积分！</p>
     <div id="gos"></div>
     <button class="bsg" onclick="setGoal()">出发！</button>
+  </div>
+</div>
+
+<!-- reset overlay -->
+<div class="ov" id="ov-reset">
+  <div class="ovc">
+    <span class="ove">🔒</span>
+    <div class="ovt">家长验证</div>
+    <div class="ovm">输入今天的日期（4位数字）<br><span style="font-size:11px;color:var(--muted)">例：3月18日 → 0318</span></div>
+    <input id="reset-pwd" type="password" placeholder="输入密码..." maxlength="10"
+      style="width:100%;background:var(--card3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;outline:none;text-align:center;letter-spacing:4px;margin-bottom:8px">
+    <div id="reset-err" style="font-size:12px;color:var(--red);margin-bottom:12px;display:none">密码错误，请重试</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button onclick="closeOv('ov-reset')" style="flex:1;padding:11px;border-radius:100px;border:1px solid var(--border);background:var(--card3);color:var(--muted);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer">取消</button>
+      <button onclick="doReset()" style="flex:1;padding:11px;border-radius:100px;border:none;background:var(--red);color:white;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer">确认重置</button>
+    </div>
   </div>
 </div>
 
@@ -1061,6 +1080,72 @@ function confetti(){
       document.body.appendChild(el); setTimeout(function(){el.remove();},3000);
     },delay);})(i*28);
   }
+}
+
+// ── RESET ──
+// password = today's date in MMDD format, e.g. March 18 = 0318
+var RESET_PASSWORD = (function(){
+  var d = new Date();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  return m + day;
+})();
+
+function showReset() {
+  document.getElementById('reset-pwd').value = '';
+  document.getElementById('reset-err').style.display = 'none';
+  openOv('ov-reset');
+  setTimeout(function(){ document.getElementById('reset-pwd').focus(); }, 300);
+}
+
+function doReset() {
+  var pwd = document.getElementById('reset-pwd').value;
+  if(pwd !== RESET_PASSWORD) {
+    document.getElementById('reset-err').style.display = 'block';
+    document.getElementById('reset-pwd').value = '';
+    return;
+  }
+
+  // calculate today's earned points to deduct
+  var todayPts = 0;
+  FIXED_TASKS.forEach(function(t){
+    if(st.completedTasks[t.id]) todayPts += t.pts;
+  });
+  if(st.allDoneToday) todayPts += 30; // all-done bonus
+
+  // deduct points (never go below 0)
+  st.points = Math.max(0, st.points - todayPts);
+  st.totalTasksDone = Math.max(0, st.totalTasksDone - Object.keys(st.completedTasks).length);
+
+  // recalculate ball progress from new points
+  // remove balls that were gained from today's points
+  var ballsLost = Math.floor(todayPts / 50);
+  st.balls = Math.max(0, st.balls - ballsLost);
+  // recalculate leftover progress
+  st.ballProgress = Math.max(0, (st.ballProgress || 0) - (todayPts % 50));
+  if(st.ballProgress < 0) {
+    st.balls = Math.max(0, st.balls - 1);
+    st.ballProgress = Math.max(0, 50 + st.ballProgress);
+  }
+
+  // reset today's task state only
+  st.completedTasks = {};
+  st.allDoneToday = false;
+  st.todayGoal = null;
+  st.todayMood = '';
+  st.todayText = '';
+  st.doneDates = st.doneDates.filter(function(d){ return d !== TODAY; });
+  // remove today's summary valid flag so pokemon throw is locked again
+  if(st.summaries && st.summaries[TODAY]) {
+    st.summaries[TODAY].valid = false;
+  }
+
+  save();
+  closeOv('ov-reset');
+  renderHeader(); renderTasks(); updateRing();
+  document.getElementById('st2').value = '';
+  document.querySelectorAll('.mb').forEach(function(b){ b.classList.remove('sel'); });
+  alert('今日打卡已重置！积分已扣回 ' + todayPts + ' 分');
 }
 
 // ── INIT ──
