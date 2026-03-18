@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>英语听力练习</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#0d1117;--card:#161b22;--card2:#1c2333;--card3:#21262d;--green:#3fb950;--orange:#f0883e;--yellow:#FFD93D;--red:#E63946;--blue:#58a6ff;--purple:#8957e5;--text:#e6edf3;--muted:#7d8590;--gold:#ffd700;--border:rgba(240,246,252,0.1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Nunito',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;padding:0 0 40px}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 20%,rgba(88,166,255,.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(137,87,229,.1) 0%,transparent 50%);pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:16px 14px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:8px}
+.btn-back{background:var(--card);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:18px;cursor:pointer;text-decoration:none;flex-shrink:0}
+.page-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--yellow)}
+.done-badge{margin-left:auto;border-radius:100px;padding:4px 12px;font-size:11px;font-weight:800;display:none}
+.done-badge.vis{display:block;background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+
+/* timer */
+.timer-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;text-align:center;margin-bottom:14px}
+.timer-ring{position:relative;width:110px;height:110px;margin:0 auto 14px}
+.timer-ring svg{transform:rotate(-90deg)}
+.tr-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:8}
+.tr-fill{fill:none;stroke:var(--blue);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .5s linear;stroke-dasharray:314}
+.tr-fill.warning{stroke:var(--orange)}
+.tr-fill.complete{stroke:var(--green)}
+.timer-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.timer-time{font-family:'Fredoka One',cursive;font-size:26px;color:var(--text);line-height:1}
+.timer-lbl{font-size:9px;color:var(--muted);font-weight:800;margin-top:2px}
+.timer-msg{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;min-height:36px}
+.timer-btns{display:flex;gap:8px;justify-content:center}
+.btn-t{padding:9px 22px;border-radius:100px;border:none;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:transform .15s}
+.btn-t:active{transform:scale(.95)}
+.btn-start{background:var(--blue);color:white}
+.btn-pause{background:var(--card3);color:var(--text);border:1px solid var(--border)}
+.btn-reset{background:var(--card3);color:var(--muted);border:1px solid var(--border)}
+
+/* section label */
+.slbl{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:6px}
+.slbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* WARNING BOX */
+.warn-box{background:rgba(240,136,62,.1);border:1px solid rgba(240,136,62,.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px}
+.warn-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.warn-text{font-size:12px;line-height:1.6;color:var(--orange);font-weight:700}
+.warn-text span{color:var(--text);font-weight:400}
+
+/* channel grid */
+.channel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.channel-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:14px 12px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.channel-card:active{transform:scale(.96)}
+.channel-card.selected{border-color:var(--yellow);background:rgba(255,215,0,.06)}
+.channel-card.locked-other{opacity:.35;filter:grayscale(.8);cursor:not-allowed;pointer-events:none}
+.channel-card.locked-other::after{content:'🔒';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px}
+.ch-emoji{font-size:36px;margin-bottom:6px;display:block}
+.ch-name{font-size:12px;font-weight:800;color:var(--text);margin-bottom:2px}
+.ch-type{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;display:inline-block;margin-bottom:6px}
+.type-yt{background:rgba(230,57,70,.15);color:var(--red)}
+.type-pod{background:rgba(137,87,229,.15);color:var(--purple)}
+.ch-desc{font-size:10px;color:var(--muted);line-height:1.4}
+.selected-tag{position:absolute;top:8px;right:8px;background:var(--yellow);color:var(--dark);font-size:9px;font-weight:900;padding:2px 7px;border-radius:100px}
+
+/* selected channel display */
+.selected-channel{background:var(--card);border:1px solid rgba(255,215,0,.3);border-radius:16px;padding:16px;margin-bottom:14px;display:none}
+.selected-channel.vis{display:block}
+.sc-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sc-emoji{font-size:40px}
+.sc-info{flex:1}
+.sc-name{font-family:'Fredoka One',cursive;font-size:18px;color:var(--yellow)}
+.sc-lock{font-size:11px;color:var(--orange);font-weight:700;margin-top:2px}
+.btn-go{display:block;width:100%;background:linear-gradient(135deg,var(--red),#c1121f);color:white;border:none;padding:13px;border-radius:12px;font-family:'Fredoka One',cursive;font-size:17px;cursor:pointer;text-decoration:none;text-align:center;transition:transform .15s;box-shadow:0 4px 16px rgba(230,57,70,.3)}
+.btn-go:active{transform:scale(.97)}
+
+/* reflection */
+.reflect-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.rq-label{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px;margin-top:12px;display:flex;align-items:center;gap:4px}
+.rq-label:first-child{margin-top:0}
+.rq-input{width:100%;background:var(--card3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;outline:none;resize:none;line-height:1.5}
+.rq-input:focus{border-color:rgba(255,215,0,.4)}
+.rq-input::placeholder{color:var(--muted)}
+.word-row{display:flex;gap:8px;margin-top:6px}
+.word-field{flex:1;background:var(--card3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;outline:none}
+.word-field:focus{border-color:rgba(255,215,0,.4)}
+.word-field::placeholder{color:var(--muted)}
+.btn-addw{padding:9px 14px;background:var(--purple);border:none;border-radius:10px;color:white;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0}
+.word-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.word-badge{background:rgba(137,87,229,.2);border:1px solid rgba(137,87,229,.4);color:var(--purple);font-size:12px;font-weight:800;padding:3px 10px;border-radius:100px;display:flex;align-items:center;gap:4px}
+.word-badge button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1}
+
+/* done button */
+.btn-done{width:100%;background:linear-gradient(135deg,var(--green),#52e080);color:white;border:none;padding:14px;border-radius:14px;font-family:'Fredoka One',cursive;font-size:18px;cursor:pointer;margin-bottom:14px;transition:transform .15s;box-shadow:0 6px 20px rgba(63,185,80,.3)}
+.btn-done:active{transform:scale(.97)}
+.btn-done:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* history */
+.hist-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.hi-date{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:6px}
+.hi-row{font-size:12px;color:var(--text);opacity:.8;line-height:1.6;margin-bottom:2px}
+.hi-words{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.hi-word{background:rgba(137,87,229,.15);color:var(--purple);font-size:11px;font-weight:800;padding:2px 8px;border-radius:100px}
+
+/* overlays */
+.ov{position:fixed;inset:0;z-index:200;background:rgba(8,8,16,.88);display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:16px}
+.ov.vis{display:flex}
+.ovc{background:var(--card2);border:1px solid var(--border);border-radius:24px;padding:28px 22px;text-align:center;max-width:300px;width:100%;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.7) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.ov-e{font-size:64px;line-height:1;margin-bottom:10px;display:block}
+.ov-t{font-family:'Fredoka One',cursive;font-size:22px;color:var(--yellow);margin-bottom:8px}
+.ov-m{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px}
+.bok{background:linear-gradient(135deg,var(--yellow),var(--orange));color:var(--dark);border:none;padding:12px 32px;border-radius:100px;font-family:'Fredoka One',cursive;font-size:16px;cursor:pointer}
+
+/* confirm overlay */
+.confirm-card{background:var(--card2);border:1px solid rgba(240,136,62,.4);border-radius:24px;padding:28px 22px;text-align:center;max-width:300px;width:100%;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+.confirm-btns{display:flex;gap:10px;justify-content:center;margin-top:16px}
+.btn-confirm{flex:1;padding:11px;border-radius:100px;border:none;font-family:'Fredoka One',cursive;font-size:15px;cursor:pointer}
+.btn-yes{background:var(--orange);color:white}
+.btn-no{background:var(--card3);color:var(--muted);border:1px solid var(--border)}
+
+.cf{position:fixed;z-index:400;border-radius:2px;animation:fall 1.8s ease-in forwards;pointer-events:none}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <a class="btn-back" href="index.html">←</a>
+    <div class="page-title">英语听力 🎧</div>
+    <div class="done-badge" id="done-badge">今日已完成</div>
+  </div>
+
+  <!-- TIMER -->
+  <div class="timer-card">
+    <div class="timer-ring">
+      <svg width="110" height="110" viewBox="0 0 110 110">
+        <circle class="tr-bg" cx="55" cy="55" r="50"/>
+        <circle class="tr-fill" id="tr-fill" cx="55" cy="55" r="50"/>
+      </svg>
+      <div class="timer-inner">
+        <div class="timer-time" id="timer-time">20:00</div>
+        <div class="timer-lbl" id="timer-lbl">准备开始</div>
+      </div>
+    </div>
+    <div class="timer-msg" id="timer-msg">选择一个频道，点开始计时，专心听！🎧</div>
+    <div class="timer-btns">
+      <button class="btn-t btn-start" id="btn-start" onclick="startTimer()">▶ 开始</button>
+      <button class="btn-t btn-pause" id="btn-pause" onclick="pauseTimer()" style="display:none">⏸ 暂停</button>
+      <button class="btn-t btn-reset" onclick="resetTimer()">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- WARNING -->
+  <div class="warn-box">
+    <div class="warn-icon">⚠️</div>
+    <div class="warn-text">
+      今天只能选一个频道！<br>
+      <span>选定之后不能换其他频道，所以想清楚再点哦～一旦选择，今天就专注这一个！</span>
+    </div>
+  </div>
+
+  <!-- CHANNEL SELECTION -->
+  <div class="slbl">选择今天的频道</div>
+  <div class="channel-grid" id="channel-grid"></div>
+
+  <!-- SELECTED CHANNEL -->
+  <div class="selected-channel" id="selected-channel">
+    <div class="sc-header">
+      <div class="sc-emoji" id="sc-emoji"></div>
+      <div class="sc-info">
+        <div class="sc-name" id="sc-name"></div>
+        <div class="sc-lock">🔒 今日已锁定此频道</div>
+      </div>
+    </div>
+    <a class="btn-go" id="btn-go" href="#" target="_blank" rel="noopener">▶ 打开频道，开始听！</a>
+  </div>
+
+  <!-- REFLECTION -->
+  <div class="slbl">听后反思 ✍️</div>
+  <div class="reflect-card">
+    <div class="rq-label">🎬 今天听/看了什么主题？</div>
+    <textarea class="rq-input" id="q-topic" rows="2" placeholder="比如：今天看了关于章鱼的视频，讲了它有三个心脏..."></textarea>
+    <div class="rq-label">💡 学到了什么新知识或新单词？</div>
+    <textarea class="rq-input" id="q-learned" rows="2" placeholder="比如：章鱼有8条腿，还能变色！学到了 camouflage 这个词～"></textarea>
+    <div class="rq-label">📝 记录新单词（输入后按添加）</div>
+    <div class="word-row">
+      <input class="word-field" id="word-inp" placeholder="输入新单词..." maxlength="30">
+      <button class="btn-addw" onclick="addWord()">+ 添加</button>
+    </div>
+    <div class="word-badges" id="word-badges"></div>
+  </div>
+
+  <button class="btn-done" id="btn-done" onclick="submitSession()" disabled>✅ 完成今日听力！返回打卡</button>
+
+  <!-- HISTORY -->
+  <div class="slbl">历史记录</div>
+  <div id="hist-list"></div>
+
+</div>
+
+<!-- time up overlay -->
+<div class="ov" id="ov-time">
+  <div class="ovc">
+    <span class="ov-e">⏰</span>
+    <div class="ov-t">20分钟到了！</div>
+    <div class="ov-m">听力时间完成！<br>填写下方反思，然后回去打卡吧～</div>
+    <button class="bok" onclick="closeOv('ov-time')">好的！</button>
+  </div>
+</div>
+
+<!-- session done overlay -->
+<div class="ov" id="ov-done-ov">
+  <div class="ovc">
+    <span class="ov-e">🎉</span>
+    <div class="ov-t">听力完成！</div>
+    <div class="ov-m" id="ov-done-m">今天的英语听力搞定了！</div>
+    <button class="bok" onclick="goBack()">回去打卡 →</button>
+  </div>
+</div>
+
+<!-- confirm channel overlay -->
+<div class="ov" id="ov-confirm">
+  <div class="confirm-card">
+    <span class="ov-e" id="cv-emoji"></span>
+    <div class="ov-t" style="color:var(--orange)">确定选这个？</div>
+    <div class="ov-m" id="cv-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn-confirm btn-no" onclick="closeOv('ov-confirm')">再想想</button>
+      <button class="btn-confirm btn-yes" onclick="confirmChannel()">确定！</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var CHANNELS = [
+  {
+    id:'scishow',
+    emoji:'🔬',
+    name:'SciShow Kids',
+    type:'yt', typeLabel:'YouTube',
+    desc:'科学小知识，每集5分钟，发音清晰',
+    url:'https://www.youtube.com/@SciShowKids/videos',
+    color:'#58a6ff'
+  },
+  {
+    id:'natgeo',
+    emoji:'🌿',
+    name:'Nat Geo Kids',
+    type:'yt', typeLabel:'YouTube',
+    desc:'动物自然，画面直观，词汇主题聚焦',
+    url:'https://www.youtube.com/@NationalGeographicKids/videos',
+    color:'#3fb950'
+  },
+  {
+    id:'pokemon',
+    emoji:'⚡',
+    name:'Pokémon TV',
+    type:'yt', typeLabel:'YouTube',
+    desc:'宝可梦英文动画，熟悉剧情更容易听懂',
+    url:'https://www.youtube.com/@Pokemon/videos',
+    color:'#ffd700'
+  },
+  {
+    id:'artforkids',
+    emoji:'🎨',
+    name:'Art for Kids Hub',
+    type:'yt', typeLabel:'YouTube',
+    desc:'边画画边听英语，注意力最集中',
+    url:'https://www.youtube.com/@ArtforKidsHub/videos',
+    color:'#f0883e'
+  },
+  {
+    id:'brainon',
+    emoji:'🧠',
+    name:'Brains On!',
+    type:'pod', typeLabel:'播客',
+    desc:'科学播客，由真实小朋友和记者共同主持，发音清晰，每集10-20分钟',
+    url:'https://podcasts.apple.com/podcast/brains-on-science-podcast-for-kids/id873310223',
+    color:'#8957e5'
+  },
+  {
+    id:'stories',
+    emoji:'📖',
+    name:'Stories Podcast',
+    type:'pod', typeLabel:'播客',
+    desc:'经典童话故事英文版，词汇简单，专为词汇量有限的孩子设计，每集5-15分钟',
+    url:'https://podcasts.apple.com/podcast/stories-podcast-a-free-bedtime-show/id1051242826',
+    color:'#ff6b9d'
+  },
+];
+
+var KEY = 'el_v2';
+function loadSt() {
+  var d = {sessions:[], todayChannel:null, todayDate:'', todayDone:false};
+  try { return Object.assign(d, JSON.parse(localStorage.getItem(KEY)||'{}')); }
+  catch(e) { return d; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(st)); }
+var st = loadSt();
+
+var TODAY = new Date().toDateString();
+// reset daily channel lock at midnight
+if(st.todayDate !== TODAY) {
+  st.todayChannel = null;
+  st.todayDone = false;
+  st.todayDate = TODAY;
+  save();
+}
+
+var TOTAL = 20 * 60;
+var timeLeft = TOTAL;
+var timerRunning = false;
+var timerDone = false;
+var timerInterval = null;
+var pendingChannel = null;
+var currentWords = [];
+
+// ── TIMER ──
+function updateTimerUI() {
+  var m = Math.floor(timeLeft/60);
+  var s = timeLeft % 60;
+  document.getElementById('timer-time').textContent = pad(m)+':'+pad(s);
+  var fill = document.getElementById('tr-fill');
+  var circ = 314;
+  fill.style.strokeDashoffset = circ * (timeLeft/TOTAL);
+  fill.className = 'tr-fill'+(timerDone?' complete':(timeLeft<=300?' warning':''));
+  var lbl = document.getElementById('timer-lbl');
+  var msg = document.getElementById('timer-msg');
+  if(timerDone){
+    lbl.textContent='完成！🎉';
+    msg.textContent='20分钟听力完成！填写下方反思，然后回去打卡！';
+  } else if(timerRunning){
+    lbl.textContent='计时中...';
+    msg.textContent='专心听，不要分心！还剩 '+m+' 分 '+pad(s)+' 秒';
+  } else {
+    lbl.textContent=timeLeft===TOTAL?'准备开始':'已暂停';
+    msg.textContent=timeLeft===TOTAL?'选择频道，点开始，专心听20分钟！🎧':'点继续恢复计时';
+  }
+}
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function startTimer() {
+  if(timerDone) return;
+  timerRunning = true;
+  document.getElementById('btn-start').style.display='none';
+  document.getElementById('btn-pause').style.display='inline-block';
+  timerInterval = setInterval(function(){
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      timerRunning=false; timerDone=true;
+      document.getElementById('btn-pause').style.display='none';
+      document.getElementById('btn-start').style.display='inline-block';
+      document.getElementById('btn-start').textContent='✓ 完成';
+      updateTimerUI();
+      document.getElementById('ov-time').classList.add('vis');
+      checkReady();
+      return;
+    }
+    timeLeft--;
+    updateTimerUI();
+  },1000);
+}
+
+function pauseTimer(){
+  clearInterval(timerInterval);
+  timerRunning=false;
+  document.getElementById('btn-pause').style.display='none';
+  document.getElementById('btn-start').style.display='inline-block';
+  document.getElementById('btn-start').textContent='▶ 继续';
+  updateTimerUI();
+}
+
+function resetTimer(){
+  clearInterval(timerInterval);
+  timerRunning=false; timerDone=false; timeLeft=TOTAL;
+  document.getElementById('btn-start').style.display='inline-block';
+  document.getElementById('btn-start').textContent='▶ 开始';
+  document.getElementById('btn-pause').style.display='none';
+  updateTimerUI();
+  checkReady();
+}
+
+// ── CHANNELS ──
+function buildChannels(){
+  var grid = document.getElementById('channel-grid');
+  grid.innerHTML='';
+  CHANNELS.forEach(function(ch){
+    var card = document.createElement('div');
+    card.className = 'channel-card';
+    card.id = 'ch-'+ch.id;
+    if(st.todayChannel){
+      if(st.todayChannel===ch.id) card.classList.add('selected');
+      else card.classList.add('locked-other');
+    }
+    var selTag = st.todayChannel===ch.id ? '<div class="selected-tag">今日选择</div>' : '';
+    card.innerHTML = selTag +
+      '<span class="ch-emoji">'+ch.emoji+'</span>'+
+      '<div class="ch-name">'+ch.name+'</div>'+
+      '<span class="ch-type type-'+ch.type+'">'+ch.typeLabel+'</span>'+
+      '<div class="ch-desc">'+ch.desc+'</div>';
+    if(!st.todayChannel){
+      card.onclick = function(){ showConfirm(ch); };
+    }
+    grid.appendChild(card);
+  });
+  updateSelectedDisplay();
+}
+
+function showConfirm(ch){
+  pendingChannel = ch;
+  document.getElementById('cv-emoji').textContent = ch.emoji;
+  document.getElementById('cv-msg').innerHTML =
+    '选择 <strong style="color:var(--text)">'+ch.name+'</strong><br>'+
+    '<span style="color:var(--orange)">今天就只能听这个频道了！</span><br>确定吗？';
+  document.getElementById('ov-confirm').classList.add('vis');
+}
+
+function confirmChannel(){
+  if(!pendingChannel) return;
+  st.todayChannel = pendingChannel.id;
+  save();
+  closeOv('ov-confirm');
+  buildChannels();
+}
+
+function updateSelectedDisplay(){
+  var box = document.getElementById('selected-channel');
+  if(!st.todayChannel){ box.classList.remove('vis'); return; }
+  var ch = CHANNELS.find(function(c){return c.id===st.todayChannel;});
+  if(!ch){ box.classList.remove('vis'); return; }
+  box.classList.add('vis');
+  document.getElementById('sc-emoji').textContent = ch.emoji;
+  document.getElementById('sc-name').textContent = ch.name;
+  document.getElementById('btn-go').href = ch.url;
+  document.getElementById('btn-go').textContent = '▶ 打开 '+ch.name+'，开始听！';
+}
+
+// ── WORDS ──
+function addWord(){
+  var inp = document.getElementById('word-inp');
+  var w = inp.value.trim();
+  if(!w || currentWords.indexOf(w)>=0){ inp.value=''; return; }
+  currentWords.push(w); inp.value='';
+  renderWords(); checkReady();
+}
+document.getElementById('word-inp').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){e.preventDefault();addWord();}
+});
+function removeWord(w){
+  currentWords=currentWords.filter(function(x){return x!==w;});
+  renderWords();
+}
+function renderWords(){
+  var wrap=document.getElementById('word-badges'); wrap.innerHTML='';
+  currentWords.forEach(function(w){
+    var b=document.createElement('div'); b.className='word-badge';
+    b.textContent=w;
+    var btn=document.createElement('button'); btn.textContent='×';
+    btn.onclick=function(){removeWord(w);};
+    b.appendChild(btn); wrap.appendChild(b);
+  });
+}
+
+// ── REFLECTION ──
+function checkReady(){
+  var topic=document.getElementById('q-topic').value.trim();
+  var learned=document.getElementById('q-learned').value.trim();
+  var ok = timerDone && topic.length>=5 && learned.length>=5;
+  document.getElementById('btn-done').disabled=!ok;
+}
+['q-topic','q-learned'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',checkReady);
+});
+
+// ── SUBMIT ──
+function submitSession(){
+  var topic=document.getElementById('q-topic').value.trim();
+  var learned=document.getElementById('q-learned').value.trim();
+  if(!timerDone||topic.length<5||learned.length<5) return;
+  var ch=CHANNELS.find(function(c){return c.id===st.todayChannel;})||{name:'未知频道'};
+  var session={
+    date:new Date().toLocaleDateString('zh-CN'),
+    dateKey:TODAY,
+    channel:ch.name,
+    topic:topic,
+    learned:learned,
+    words:currentWords.slice()
+  };
+  if(!st.sessions) st.sessions=[];
+  st.sessions.unshift(session);
+  st.todayDone=true;
+  save();
+  document.getElementById('ov-done-m').innerHTML=
+    '完成了 <strong>20</strong> 分钟听力！<br>'+
+    '频道：'+ch.name+'<br>'+
+    '记录了 <strong>'+currentWords.length+'</strong> 个新单词 🎊<br>回去打卡领积分吧！';
+  document.getElementById('ov-done-ov').classList.add('vis');
+  document.getElementById('done-badge').classList.add('vis');
+  confetti();
+  renderHistory();
+}
+
+function goBack(){ window.location.href='index.html'; }
+
+// ── HISTORY ──
+function renderHistory(){
+  var wrap=document.getElementById('hist-list');
+  wrap.innerHTML='';
+  var sessions=(st.sessions||[]).slice(0,10);
+  if(!sessions.length){
+    wrap.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0">还没有记录，完成第一次听力吧！</div>';
+    return;
+  }
+  sessions.forEach(function(s){
+    var item=document.createElement('div'); item.className='hist-item';
+    var d=document.createElement('div'); d.className='hi-date';
+    d.textContent=s.date+' · '+s.channel;
+    var r1=document.createElement('div'); r1.className='hi-row'; r1.textContent='🎬 '+s.topic;
+    var r2=document.createElement('div'); r2.className='hi-row'; r2.textContent='💡 '+s.learned;
+    item.appendChild(d); item.appendChild(r1); item.appendChild(r2);
+    if(s.words&&s.words.length){
+      var ww=document.createElement('div'); ww.className='hi-words';
+      s.words.forEach(function(w){
+        var b=document.createElement('div'); b.className='hi-word'; b.textContent=w;
+        ww.appendChild(b);
+      });
+      item.appendChild(ww);
+    }
+    wrap.appendChild(item);
+  });
+}
+
+function closeOv(id){ document.getElementById(id).classList.remove('vis'); }
+
+function confetti(){
+  var cols=['#FFD93D','#FF6B35','#4361EE','#3fb950','#FF6B9D','#8957e5'];
+  for(var i=0;i<50;i++){
+    (function(delay){setTimeout(function(){
+      var el=document.createElement('div'); el.className='cf';
+      el.style.left=Math.random()*100+'vw';
+      el.style.background=cols[Math.floor(Math.random()*cols.length)];
+      el.style.width=(8+Math.random()*8)+'px'; el.style.height=(8+Math.random()*8)+'px';
+      el.style.animationDuration=(1.2+Math.random()*1.2)+'s';
+      el.style.animationDelay=(Math.random()*.4)+'s';
+      document.body.appendChild(el); setTimeout(function(){el.remove();},3000);
+    },delay);})(i*28);
+  }
+}
+
+// ── INIT ──
+buildChannels();
+renderHistory();
+updateTimerUI();
+if(st.todayDone) document.getElementById('done-badge').classList.add('vis');
+</script>
+</body>
+</html>
